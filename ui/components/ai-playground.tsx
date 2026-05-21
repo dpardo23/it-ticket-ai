@@ -21,9 +21,6 @@ export default function AIPlayground() {
     const [logs, setLogs] = useState<string[]>([])
     const terminalRef = useRef<HTMLDivElement>(null!)
 
-    // Enlace dinámico a la API (Nube o Local)
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-
     const pushLog = (msg: string) => {
         setLogs((prev) => [...prev, `[INFO] ${new Date().toLocaleTimeString()} - ${msg}`])
     }
@@ -49,7 +46,7 @@ export default function AIPlayground() {
         try {
             const start = performance.now()
 
-            const res = await fetch(`${API_URL}/api/predict`, {
+            const res = await fetch('http://localhost:8000/api/predict', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title, description }),
@@ -112,7 +109,7 @@ export default function AIPlayground() {
         toast.loading('Enviando feedback...', { id: 'feedback' })
 
         try {
-            const res = await fetch(`${API_URL}/api/feedback`, {
+            const res = await fetch('http://localhost:8000/api/feedback', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -162,7 +159,7 @@ export default function AIPlayground() {
             const formData = new FormData()
             formData.append('file', file)
 
-            const res = await fetch(`${API_URL}/api/batch`, {
+            const res = await fetch('http://localhost:8000/api/batch', {
                 method: 'POST',
                 body: formData,
             })
@@ -219,7 +216,7 @@ export default function AIPlayground() {
             const formData = new FormData()
             formData.append('file', file)
 
-            const res = await fetch(`${API_URL}/api/batch_predict`, {
+            const res = await fetch('http://localhost:8000/api/batch_predict', {
                 method: 'POST',
                 body: formData,
             })
