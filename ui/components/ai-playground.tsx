@@ -1,3 +1,5 @@
+// 'use client'
+// import React, { useRef, useState } from 'react'
 'use client'
 
 import React, { useRef, useState } from 'react'
@@ -9,6 +11,11 @@ import { ReasoningPanel } from './playground/reasoning-panel'
 import { TerminalPanel } from './playground/terminal-panel'
 
 import type { SingleInferenceResult, BatchInferenceResult, BlindBatchResult } from '@/types/ai'
+
+// Base URL dinámico para apuntar al backend.
+// Usa la variable de entorno NEXT_PUBLIC_API_BASE si está definida,
+// si no, usa el valor por defecto solicitado.
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'https://dpardo-it-ticket-ai-backend.hf.space'
 
 export default function AIPlayground() {
     const [activeTab, setActiveTab] = useState<'manual' | 'batch' | 'predict'>('manual')
@@ -46,7 +53,7 @@ export default function AIPlayground() {
         try {
             const start = performance.now()
 
-            const res = await fetch('http://localhost:8000/api/predict', {
+            const res = await fetch(`${API_BASE}/api/predict`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title, description }),
@@ -109,7 +116,7 @@ export default function AIPlayground() {
         toast.loading('Enviando feedback...', { id: 'feedback' })
 
         try {
-            const res = await fetch('http://localhost:8000/api/feedback', {
+            const res = await fetch(`${API_BASE}/api/feedback`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -159,7 +166,7 @@ export default function AIPlayground() {
             const formData = new FormData()
             formData.append('file', file)
 
-            const res = await fetch('http://localhost:8000/api/batch', {
+            const res = await fetch(`${API_BASE}/api/batch`, {
                 method: 'POST',
                 body: formData,
             })
@@ -216,7 +223,7 @@ export default function AIPlayground() {
             const formData = new FormData()
             formData.append('file', file)
 
-            const res = await fetch('http://localhost:8000/api/batch_predict', {
+            const res = await fetch(`${API_BASE}/api/batch_predict`, {
                 method: 'POST',
                 body: formData,
             })
