@@ -25,6 +25,9 @@
             "csp": null
         }
     },
+    "permissions": [
+        "https://dpardo-it-ticket-ai-backend.hf.space/*"
+    ],
     "bundle": {
         "active": true,
         "targets": "all",
