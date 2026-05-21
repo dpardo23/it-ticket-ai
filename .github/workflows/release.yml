@@ -51,22 +51,24 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
       - name: Instalar dependencias del Frontend
-        run: cd ui && pnpm install
+        run: |
+          cd ui
+          pnpm install
 
-      - name: Compilar Frontend (Next.js)
+      - name: Compilar Frontend (Next.js) y exportar a out
         run: |
           cd ui
           pnpm build
-          # Aseguramos que Next exporte a 'out' para que Tauri pueda empaquetar los assets estáticos
-          if [ -f package.json ] && jq -e '.scripts.export' package.json >/dev/null 2>&1; then
-            pnpm export
+          # Intentar exportar a out para que Tauri empaquete los assets estáticos.
+          # Si package.json tiene script "export", se usará; si no, intentamos next export.
+          if pnpm -s run export; then
+            echo "Export completado con pnpm export"
           else
-            # intenta ejecutar next export por defecto
-            pnpm exec next export -o out || true
+            pnpm exec -- next export -o out || true
           fi
 
       - name: Compilar y empaquetar con Tauri Action
-        uses: tauri-apps/tauri-action@v1
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
