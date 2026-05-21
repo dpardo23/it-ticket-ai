@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Configurar Node.js
         uses: actions/setup-node@v4
@@ -52,10 +54,19 @@ jobs:
         run: cd ui && pnpm install
 
       - name: Compilar Frontend (Next.js)
-        run: cd ui && pnpm build
+        run: |
+          cd ui
+          pnpm build
+          # Aseguramos que Next exporte a 'out' para que Tauri pueda empaquetar los assets estáticos
+          if [ -f package.json ] && jq -e '.scripts.export' package.json >/dev/null 2>&1; then
+            pnpm export
+          else
+            # intenta ejecutar next export por defecto
+            pnpm exec next export -o out || true
+          fi
 
       - name: Compilar y empaquetar con Tauri Action
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
