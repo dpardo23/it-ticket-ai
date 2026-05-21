@@ -50,7 +50,7 @@ jobs:
         run: cd ui && pnpm install
 
       - name: Compilar y empaquetar con Tauri Action
-        uses: tauri-apps/tauri-action@v2
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -59,6 +59,6 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'IT Ticket AI v__VERSION__'
           releaseBody: 'Lanzamiento oficial automatizado.'
-          releaseDraft: true
+          releaseDraft: truegit 
           prerelease: false
           args: ${{ matrix.args }}
