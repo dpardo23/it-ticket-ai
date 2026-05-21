@@ -1,0 +1,24 @@
+# Node.js / Next.js
+node_modules/
+.next/
+out/
+build/
+.env*.local
+
+# Python / FastAPI / IA
+__pycache__/
+*.py[cod]
+*$py.class
+ai_engine/venv/
+.pytest_cache/
+ai_engine/.env
+models/
+*.pkl
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# OS / Misc
+.DS_Store
+*.log
