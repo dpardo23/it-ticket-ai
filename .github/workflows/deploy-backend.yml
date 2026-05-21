@@ -19,10 +19,25 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           cd ai_engine
+          
+          # 1. Crear el README especial que exige Hugging Face
+          cat > README.md << 'EOF'
+          ---
+          title: IT Ticket AI Backend
+          emoji: 🧠
+          colorFrom: blue
+          colorTo: red
+          sdk: docker
+          pinned: false
+          ---
+          Backend de Inteligencia Artificial MLOps para IT Ticket AI.
+          EOF
+          
+          # 2. Inicializar Git y subir SOLO la carpeta ai_engine
           git init
           git checkout -b main
           git config user.email "bot@bytebusters.com"
           git config user.name "HF Sync Bot"
           git add .
-          git commit -m "Deploy automático desde GitHub Actions"
+          git commit -m "Deploy automático: Inyección de README y actualización de código"
           git push -f https://dpardo:$HF_TOKEN@huggingface.co/spaces/dpardo/it-ticket-ai-backend main
