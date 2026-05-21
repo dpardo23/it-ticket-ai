@@ -1,0 +1,28 @@
+name: "Desplegar Backend a Hugging Face"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ai_engine/**' # Solo se ejecuta si modificas algo en el backend
+
+jobs:
+  deploy-to-huggingface:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Empujar carpeta ai_engine a Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          cd ai_engine
+          git init
+          git checkout -b main
+          git config user.email "bot@bytebusters.com"
+          git config user.name "HF Sync Bot"
+          git add .
+          git commit -m "Deploy automático desde GitHub Actions"
+          git push -f https://dpardo:$HF_TOKEN@huggingface.co/spaces/dpardo/it-ticket-ai-backend main
