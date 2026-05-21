@@ -3,7 +3,7 @@ name: "Publicar Versión Nativa (Release)"
 on:
   push:
     tags:
-      - 'v*.*.*' # Se activa al hacer push de tags como v1.0.0, v0.1.0, etc.
+      - 'v*.*.*'
 
 jobs:
   publish-tauri:
@@ -40,28 +40,25 @@ jobs:
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-      - name: Configurar caché de Rust
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
-
-      - name: Instalar dependencias de desarrollo de Linux (Solo para Ubuntu)
+      - name: Instalar dependencias de desarrollo de Linux
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
       - name: Instalar dependencias del Frontend
-        run: pnpm install
+        run: cd ui && pnpm install
 
       - name: Compilar y empaquetar con Tauri Action
         uses: tauri-apps/tauri-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          projectPath: './ui'
           tagName: ${{ github.ref_name }}
           releaseName: 'IT Ticket AI v__VERSION__'
-          releaseBody: 'Lanzamiento oficial automatizado. Incluye binarios optimizados de producción para el Pipeline de clasificación NLP.'
+          releaseBody: 'Lanzamiento oficial automatizado.'
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
