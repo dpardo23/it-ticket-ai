@@ -60,8 +60,8 @@ jobs:
           cd ui
           pnpm build
 
-      - name: Compilar y empaquetar con Tauri Action (v2)
-        uses: tauri-apps/tauri-action@v2
+      - name: Compilar y empaquetar con Tauri Action (v0)
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
