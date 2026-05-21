@@ -6,6 +6,12 @@
         "main"
     ],
     "permissions": [
-        "core:default"
+        "core:window:allow-create",
+        "core:window:allow-close",
+        "core:dialog:allow-open",
+        "http:allow-http://localhost:8000/*",
+        "http:allow-http://localhost:3000/*",
+        "http:allow-https://dpardo-it-ticket-ai-backend.hf.space/*",
+        "http:allow-https://*.hf.space/*"
     ]
 }
