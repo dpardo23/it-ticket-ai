@@ -25,17 +25,15 @@
             "csp": null
         }
     },
-    "tauri": {
-        "permissions": [
-            "http://localhost:8000/*",
-            "http://localhost:3000/*",
-            "https://dpardo-it-ticket-ai-backend.hf.space/*",
-            "https://*.hf.space/*",
-            "core:window:allow-create",
-            "core:window:allow-close",
-            "core:dialog:open"
-        ]
-    },
+    "permissions": [
+        "http://localhost:8000/*",
+        "http://localhost:3000/*",
+        "https://dpardo-it-ticket-ai-backend.hf.space/*",
+        "https://*.hf.space/*",
+        "core:window:allow-create",
+        "core:window:allow-close",
+        "core:dialog:open"
+    ],
     "bundle": {
         "active": true,
         "targets": "all",
