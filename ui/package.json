@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "export": "next export -o out",
-    "tauri:build": "pnpm build && pnpm export && pnpm exec tauri build"
+    "tauri:build": "pnpm build && pnpm exec tauri build"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

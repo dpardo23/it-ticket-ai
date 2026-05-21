@@ -4,36 +4,14 @@
     "version": "0.1.0",
     "identifier": "com.umss.itticketai",
     "build": {
-        "frontendDist": "../out",
-        "devUrl": "http://localhost:3000",
         "beforeDevCommand": "pnpm dev",
-        "beforeBuildCommand": "pnpm build"
+        "beforeBuildCommand": "pnpm build",
+        "devUrl": "http://localhost:3000",
+        "frontendDist": "../out"
     },
     "app": {
-        "windows": [
-            {
-                "title": "IT Ticket AI",
-                "width": 1200,
-                "height": 800,
-                "resizable": true,
-                "fullscreen": false,
-                "maximized": true,
-                "visible": true
-            }
-        ],
         "security": {
             "csp": null
-        }
-    },
-    "allowlist": {
-        "http": {
-            "all": false,
-            "scope": [
-                "http://localhost:8000/*",
-                "http://localhost:3000/*",
-                "https://dpardo-it-ticket-ai-backend.hf.space/*",
-                "https://*.hf.space/*"
-            ]
         }
     },
     "bundle": {
