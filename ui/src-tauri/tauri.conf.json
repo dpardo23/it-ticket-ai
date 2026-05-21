@@ -26,11 +26,7 @@
         }
     },
     "tauri": {
-        "permissions": [
-            "http://localhost:8000/*",
-            "https://dpardo-it-ticket-ai-backend.hf.space/*",
-            "https://*.hf.space/*"
-        ]
+        "permissions": []
     },
     "bundle": {
         "active": true,
