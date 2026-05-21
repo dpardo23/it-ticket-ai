@@ -6,6 +6,6 @@
         "main"
     ],
     "permissions": [
-        "https://dpardo-it-ticket-ai-backend.hf.space/*"
+        "http-all"
     ]
 }
