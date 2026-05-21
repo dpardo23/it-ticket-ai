@@ -19,7 +19,7 @@ export default function AIPlayground() {
     const [blindResult, setBlindResult] = useState<BlindBatchResult | null>(null)
 
     const [logs, setLogs] = useState<string[]>([])
-    const terminalRef = useRef<HTMLDivElement>(null)
+    const terminalRef = useRef<HTMLDivElement>(null!)
 
     const pushLog = (msg: string) => {
         setLogs((prev) => [...prev, `[INFO] ${new Date().toLocaleTimeString()} - ${msg}`])
