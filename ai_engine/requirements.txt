@@ -8,3 +8,4 @@ psycopg2-binary
 supabase
 python-multipart
 joblib
+python-dotenv
