@@ -72,18 +72,33 @@ def health_check():
 
 @app.post("/api/predict")
 def predict(req: PredictRequest):
-    """Fase 3: Inferencia manual con latencia ultrabaja (Funcional)."""
+    """Fase 3: Inferencia manual con escudo vectorial OOD (Out-of-Domain)."""
     start = time.time()
     original_text = f"{req.title}\n{req.description}"
     
     # NLP Funcional
     clean_text, tokens = preprocess_text(original_text)
     
-    # Heurística Anti-Basura
-    if len(tokens) < 2:
-        return {"is_garbage": True, "message": "Texto inválido o insuficiente."}
+    # Heurística Básica: Se requiere un mínimo de contexto (Ej: evitar "no da")
+    if len(tokens) < 4:
+        return {"is_garbage": True, "message": "Texto insuficiente. Describe el problema con mayor detalle técnico."}
         
     try:
+        # Nivel 3: Detector Vectorial de Anomalías Funcional
+        # Protege al modelo de cuentos, recetas o texto fuera de dominio (OOD).
+        vocab = engine.vectorizer.vocabulary_
+        
+        # Filtramos los tokens del usuario que existen en el espacio vectorial entrenado
+        known_tokens = list(filter(lambda t: t in vocab, tokens))
+        known_ratio = len(known_tokens) / len(tokens)
+        
+        # Umbral estricto: Si menos del 30% del texto tiene semántica conocida, se rechaza
+        if known_ratio < 0.3:
+             return {
+                "is_garbage": True, 
+                "message": f"Anomalía detectada. El texto carece de contexto IT válido (Coincidencia semántica: {known_ratio*100:.1f}%). Por favor, ingresa un ticket técnico."
+            }
+
         result = engine.predict_single(clean_text, tokens)
     except RuntimeError:
         raise HTTPException(status_code=500, detail="Modelo no entrenado. Ve a la pestaña Batch y sube un CSV primero.")
@@ -120,7 +135,7 @@ def feedback(req: FeedbackRequest):
     
     retrained = False
     
-    # Función lambda para evaluar si es seguro reentrenar (Previene el error de K-Fold)
+    # Función lambda pura para evaluar seguridad de reentrenamiento
     is_safe_to_train = lambda data_frame: not data_frame.empty and len(data_frame) >= 5
     
     if learning_status == "NEEDS_RETRAIN":
@@ -172,7 +187,7 @@ async def batch(file: UploadFile = File(...)):
     processed_records = list(map(preprocess_mapper, records))
     
     # 2. Filter: Descartar basura y nulos
-    is_valid = lambda item: len(item["nlp"][1]) >= 2 and pd.notna(item["raw_dept"])
+    is_valid = lambda item: len(item["nlp"][1]) >= 4 and pd.notna(item["raw_dept"])
     valid_records = list(filter(is_valid, processed_records))
     rejected = len(records) - len(valid_records)
     
@@ -210,7 +225,7 @@ async def batch(file: UploadFile = File(...)):
 
 @app.post("/api/batch_predict")
 async def batch_predict(file: UploadFile = File(...)):
-    """Fase 1.6: Inferencia Masiva Ciega usando Map/Reduce."""
+    """Fase 1.6: Inferencia Masiva Ciega usando Map/Reduce y OOD Detection."""
     start_time = time.time()
     
     if not engine.classifier or not engine.vectorizer:
@@ -230,20 +245,33 @@ async def batch_predict(file: UploadFile = File(...)):
 
     df["text"] = df["text"].fillna("")
     records = df.to_dict('records')
+    vocab = engine.vectorizer.vocabulary_
     
-    # 1. Función Pura para inferir un ticket individual
+    # 1. Función Pura para inferir un ticket individual con guardia vectorial
     def infer_ticket(idx: int, raw_text: str) -> dict:
         clean_txt, tokens = preprocess_text(raw_text)
         text_preview = raw_text[:120] + "..." if len(raw_text) > 120 else raw_text
         
-        if len(tokens) < 2:
+        # Filtro 1: Cantidad mínima
+        if len(tokens) < 4:
             return {
                 "id": idx + 1,
                 "text_original": text_preview,
-                "predicted_department": "Rechazado (Basura)",
+                "predicted_department": "Rechazado (Texto Insuficiente)",
                 "confidence": "0.0%"
             }
             
+        # Filtro 2: Detección Out-of-Domain (OOD)
+        known_tokens = list(filter(lambda t: t in vocab, tokens))
+        if len(known_tokens) / len(tokens) < 0.3:
+             return {
+                "id": idx + 1,
+                "text_original": text_preview,
+                "predicted_department": "Rechazado (Anomalía OOD)",
+                "confidence": "0.0%"
+            }
+
+        # Inferencia Matemática
         X_vec = engine.vectorizer.transform([clean_txt])
         probas = engine.classifier.predict_proba(X_vec)[0]
         max_idx = probas.argmax()
