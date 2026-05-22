@@ -6,6 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
+from sklearn.utils.class_weight import compute_class_weight # CORRECCIÓN: Importamos el calculador de pesos
 
 # CORRECCIÓN: Solo dos dirname() para quedarnos dentro de la carpeta del proyecto (/app)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -38,10 +39,15 @@ class ITTicketModel:
         # Aprendizaje orgánico: la IA descubre los departamentos desde los datos
         self.departments = sorted(list(set(labels)))
 
+        # CORRECCIÓN: Calculamos los pesos matemáticos 1 sola vez y creamos un diccionario
+        weights = compute_class_weight(class_weight="balanced", classes=np.array(self.departments), y=labels)
+        class_weight_dict = dict(zip(self.departments, weights))
+
         self.vectorizer = TfidfVectorizer(max_features=12000, ngram_range=(1, 2))
         X = self.vectorizer.fit_transform(texts)
 
-        self.classifier = SGDClassifier(loss="log_loss", random_state=42, class_weight="balanced")
+        # CORRECCIÓN: Inyectamos el diccionario en lugar de usar la palabra "balanced"
+        self.classifier = SGDClassifier(loss="log_loss", random_state=42, class_weight=class_weight_dict)
 
         # Validación cruzada K-Fold para evitar overfitting
         cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
