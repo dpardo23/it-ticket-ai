@@ -1,6 +1,7 @@
 import time
 import io
 import pandas as pd
+from functools import reduce
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -53,7 +54,7 @@ def health_check():
 
 @app.post("/api/predict")
 def predict(req: PredictRequest):
-    """Fase 3: Inferencia manual con latencia ultrabaja."""
+    """Fase 3: Inferencia manual con latencia ultrabaja (Funcional)."""
     start = time.time()
     original_text = f"{req.title}\n{req.description}"
     
@@ -71,10 +72,12 @@ def predict(req: PredictRequest):
         
     latency = int((time.time() - start) * 1000)
     
-    # Heurística de Criticidad simple basada en keywords
-    t = original_text.lower()
-    score = sum([3 for w in ["urgente", "caído", "caida", "crítico", "producción"] if w in t]) + \
-            sum([1 for w in ["lento", "error", "falla", "problema"] if w in t])
+    # Heurística de Criticidad usando List Comprehensions (Paradigma Funcional Python)
+    t_lower = original_text.lower()
+    score = sum([3 for w in ["urgente", "caído", "caida", "crítico", "producción"] if w in t_lower]) + \
+            sum([1 for w in ["lento", "error", "falla", "problema"] if w in t_lower])
+            
+    # Asignación declarativa
     level = "Nivel 3 (Crítico)" if score >= 4 else "Nivel 2 (Especializado)" if score >= 2 else "Nivel 1 (Triaje Directo)"
     
     return {
@@ -91,25 +94,27 @@ def predict(req: PredictRequest):
 
 @app.post("/api/feedback")
 def feedback(req: FeedbackRequest):
-    """Aprendizaje Continuo con Expansión Orgánica."""
+    """Aprendizaje Continuo con Expansión Orgánica y Guardia Anti-Cold-Start."""
     insert_feedback(req.original_text, req.correct_department)
     
     clean_txt, _ = preprocess_text(req.original_text)
-    
     learning_status = engine.learn_online(clean_txt, req.correct_department)
     
     retrained = False
     
+    # Función lambda para evaluar si es seguro reentrenar (Previene el error de K-Fold)
+    is_safe_to_train = lambda data_frame: not data_frame.empty and len(data_frame) >= 5
+    
     if learning_status == "NEEDS_RETRAIN":
         df = fetch_master_dataset()
-        if not df.empty:
+        if is_safe_to_train(df):
             engine.train_batch(df)
             retrained = True
     else:
         count = fetch_feedback_count()
         if count > 0 and count % 20 == 0:
             df = fetch_master_dataset()
-            if not df.empty:
+            if is_safe_to_train(df):
                 engine.train_batch(df)
                 retrained = True
             
@@ -122,7 +127,7 @@ def feedback(req: FeedbackRequest):
 
 @app.post("/api/batch")
 async def batch(file: UploadFile = File(...)):
-    """Fase 2: Auditoría, K-Fold y Entrenamiento Masivo por CSV."""
+    """Fase 2: Auditoría y Entrenamiento Masivo usando Map/Filter."""
     start = time.time()
     
     try:
@@ -139,20 +144,27 @@ async def batch(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="El CSV debe tener las columnas 'text' y 'department'.")
 
     df["text"] = df["text"].fillna("")
+    records = df.to_dict('records')
     
-    clean_data = []
-    rejected = 0
+    # 1. Map: Preprocesar todos los registros (Lazy Evaluation)
+    preprocess_mapper = lambda r: {
+        "raw_dept": r.get("department"), 
+        "nlp": preprocess_text(str(r.get("text", "")))
+    }
+    processed_records = list(map(preprocess_mapper, records))
     
-    for _, row in df.iterrows():
-        c_text, toks = preprocess_text(str(row["text"]))
-        if len(toks) >= 2 and pd.notna(row["department"]):
-            clean_data.append({"text": c_text, "department": row["department"]})
-        else:
-            rejected += 1
-            
-    if not clean_data:
+    # 2. Filter: Descartar basura y nulos
+    is_valid = lambda item: len(item["nlp"][1]) >= 2 and pd.notna(item["raw_dept"])
+    valid_records = list(filter(is_valid, processed_records))
+    rejected = len(records) - len(valid_records)
+    
+    if not valid_records:
         raise HTTPException(status_code=400, detail="El CSV no contenía tickets válidos tras la limpieza NLP.")
-        
+    
+    # 3. Map: Formatear para el DataFrame final
+    format_mapper = lambda item: {"text": item["nlp"][0], "department": item["raw_dept"]}
+    clean_data = list(map(format_mapper, valid_records))
+    
     clean_df = pd.DataFrame(clean_data)
     train_stats = engine.train_batch(clean_df)
     
@@ -176,14 +188,11 @@ async def batch(file: UploadFile = File(...)):
 
 @app.post("/api/batch_predict")
 async def batch_predict(file: UploadFile = File(...)):
-    """
-    Fase 1.6: Inferencia Masiva Ciega.
-    Recibe un CSV sin departamentos, limpia cada ticket y predice su clase en milisegundos.
-    """
+    """Fase 1.6: Inferencia Masiva Ciega usando Map/Reduce."""
     start_time = time.time()
     
     if not engine.classifier or not engine.vectorizer:
-        raise HTTPException(status_code=400, detail="La IA no ha sido entrenada. Sube primero un dataset en la pestaña de Lotes.")
+        raise HTTPException(status_code=400, detail="La IA no ha sido entrenada. Sube primero un dataset en Lotes.")
 
     try:
         content = await file.read()
@@ -195,35 +204,44 @@ async def batch_predict(file: UploadFile = File(...)):
         if "titulo" in df.columns and "descripcion" in df.columns:
             df["text"] = df["titulo"].astype(str) + " " + df["descripcion"].astype(str)
         else:
-            raise HTTPException(status_code=400, detail="El CSV debe contener una columna 'text' o 'titulo' y 'descripcion'.")
+            raise HTTPException(status_code=400, detail="El CSV debe contener 'text' o 'titulo' y 'descripcion'.")
 
     df["text"] = df["text"].fillna("")
+    records = df.to_dict('records')
     
-    predictions = []
-    distribution = {}
-    
-    for idx, row in df.iterrows():
-        raw_text = str(row["text"])
+    # 1. Función Pura para inferir un ticket individual
+    def infer_ticket(idx: int, raw_text: str) -> dict:
         clean_txt, tokens = preprocess_text(raw_text)
+        text_preview = raw_text[:120] + "..." if len(raw_text) > 120 else raw_text
         
         if len(tokens) < 2:
-            pred_dept = "Rechazado (Basura)"
-            prob = 0.0
-        else:
-            X_vec = engine.vectorizer.transform([clean_txt])
-            probas = engine.classifier.predict_proba(X_vec)[0]
-            max_idx = probas.argmax()
-            pred_dept = engine.classifier.classes_[max_idx]
-            prob = round(float(probas[max_idx]), 4)
+            return {
+                "id": idx + 1,
+                "text_original": text_preview,
+                "predicted_department": "Rechazado (Basura)",
+                "confidence": "0.0%"
+            }
             
-        distribution[pred_dept] = distribution.get(pred_dept, 0) + 1
+        X_vec = engine.vectorizer.transform([clean_txt])
+        probas = engine.classifier.predict_proba(X_vec)[0]
+        max_idx = probas.argmax()
         
-        predictions.append({
+        return {
             "id": idx + 1,
-            "text_original": raw_text[:120] + "..." if len(raw_text) > 120 else raw_text,
-            "predicted_department": pred_dept,
-            "confidence": f"{prob * 100:.1f}%"
-        })
+            "text_original": text_preview,
+            "predicted_department": engine.classifier.classes_[max_idx],
+            "confidence": f"{round(float(probas[max_idx]) * 100, 1)}%"
+        }
+
+    # 2. Map: Proyectar la inferencia sobre toda la colección de registros
+    predictions = list(map(lambda item: infer_ticket(item[0], str(item[1].get("text", ""))), enumerate(records)))
+    
+    # 3. Reduce: Agrupar la distribución de frecuencias sin mutar variables externas
+    distribution = reduce(
+        lambda acc, p: {**acc, p["predicted_department"]: acc.get(p["predicted_department"], 0) + 1},
+        predictions,
+        {}
+    )
 
     speed = int((time.time() - start_time) * 1000)
     

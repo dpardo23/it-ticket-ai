@@ -13,8 +13,7 @@
         "windows": [
             {
                 "title": "IT Ticket AI",
-                "width": 1280,
-                "height": 800,
+                "fullscreen": true,
                 "center": true,
                 "resizable": true,
                 "url": "/"
