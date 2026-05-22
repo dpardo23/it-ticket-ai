@@ -1,6 +1,6 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
-    "productName": "IT_Ticket_AI",
+    "productName": "IT Ticket AI",
     "version": "0.1.0",
     "identifier": "com.umss.itticketai",
     "build": {
@@ -10,6 +10,16 @@
         "frontendDist": "../out"
     },
     "app": {
+        "windows": [
+            {
+                "title": "IT Ticket AI",
+                "width": 1280,
+                "height": 800,
+                "center": true,
+                "resizable": true,
+                "url": "/"
+            }
+        ],
         "security": {
             "csp": null
         }

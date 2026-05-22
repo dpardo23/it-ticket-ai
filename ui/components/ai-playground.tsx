@@ -1,5 +1,3 @@
-// 'use client'
-// import React, { useRef, useState } from 'react'
 'use client'
 
 import React, { useRef, useState } from 'react'
@@ -250,14 +248,14 @@ export default function AIPlayground() {
     }
 
     return (
-        <div className="w-full h-full flex flex-col overflow-hidden">
+        <div className="w-full h-full flex flex-col overflow-y-auto lg:overflow-hidden p-2 lg:p-0">
             <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "circOut" }}
-                className="grid grid-cols-12 gap-4 h-full overflow-hidden"
+                className="flex flex-col lg:grid lg:grid-cols-12 gap-4 h-auto lg:h-full lg:overflow-hidden"
             >
-                <div className="col-span-4 h-full">
+                <div className="w-full lg:col-span-4 h-auto lg:h-full min-h-[500px] lg:min-h-0">
                     <InputPanel
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
@@ -268,8 +266,8 @@ export default function AIPlayground() {
                     />
                 </div>
 
-                <div className="col-span-8 h-full flex flex-col gap-4 overflow-hidden">
-                    <div className="flex-1 min-h-0">
+                <div className="w-full lg:col-span-8 h-auto lg:h-full flex flex-col gap-4 lg:overflow-hidden">
+                    <div className="flex-1 min-h-[600px] lg:min-h-0">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={activeTab}
@@ -291,7 +289,7 @@ export default function AIPlayground() {
                         </AnimatePresence>
                     </div>
 
-                    <div className="h-[180px] shrink-0">
+                    <div className="h-[300px] lg:h-[180px] shrink-0">
                         <TerminalPanel logs={logs} isProcessing={isProcessing} terminalRef={terminalRef} />
                     </div>
                 </div>

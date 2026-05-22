@@ -79,30 +79,30 @@ export function InputPanel({
     return (
         <div className="h-full bg-card border border-border/60 shadow-sm flex flex-col rounded-xl overflow-hidden">
             {/* CABECERA */}
-            <div className="h-[52px] px-4 flex items-center justify-between border-b border-border/60 bg-muted/20 text-foreground">
-                <div className="flex items-center gap-2 font-semibold tracking-tight text-muted-foreground">
+            <div className="min-h-[52px] h-auto py-3 px-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-border/60 bg-muted/20 text-foreground">
+                <div className="flex items-center gap-2 font-semibold tracking-tight text-muted-foreground w-full sm:w-auto justify-center sm:justify-start">
                     <Keyboard size={16} className="text-primary" />
                     <span className="text-sm">Panel de Entrada</span>
                 </div>
-                <div className="flex items-center bg-muted p-1 rounded-lg border border-border/40">
+                <div className="flex flex-wrap justify-center items-center bg-muted p-1 rounded-lg border border-border/40 w-full sm:w-auto">
                     <button
                         onClick={() => setActiveTab("manual")}
                         disabled={isProcessing}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all duration-300 ${activeTab === "manual" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`flex-1 sm:flex-none px-3 py-1 text-xs font-medium rounded-md transition-all duration-300 ${activeTab === "manual" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     >
                         Manual
                     </button>
                     <button
                         onClick={() => setActiveTab("batch")}
                         disabled={isProcessing}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all duration-300 ${activeTab === "batch" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`flex-1 sm:flex-none px-3 py-1 text-xs font-medium rounded-md transition-all duration-300 ${activeTab === "batch" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     >
                         Lotes
                     </button>
                     <button
                         onClick={() => setActiveTab("predict")}
                         disabled={isProcessing}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-all duration-300 ${activeTab === "predict" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`flex-1 sm:flex-none px-3 py-1 text-xs font-medium rounded-md transition-all duration-300 ${activeTab === "predict" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     >
                         Inferencia
                     </button>
@@ -127,7 +127,7 @@ export function InputPanel({
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                     placeholder="Ej: Error de conexión VPN"
-                                    className="h-10 rounded-lg bg-background"
+                                    className="h-10 rounded-lg bg-background w-full"
                                     disabled={isProcessing}
                                 />
                             </div>
@@ -202,7 +202,7 @@ export function InputPanel({
                             onClick={handleBrowseClick}
                         >
                             <UploadCloud size={36} className="text-primary mb-3" />
-                            <div className="text-sm font-bold text-foreground">
+                            <div className="text-sm font-bold text-foreground break-all px-2">
                                 {csvFile ? csvFile.name : "Selecciona o arrastra tu CSV"}
                             </div>
                             <div className="text-xs text-muted-foreground mt-1">
@@ -263,10 +263,10 @@ export function InputPanel({
                             onClick={handleBrowseClick}
                         >
                             <Zap size={36} className="text-primary mb-3" />
-                            <div className="text-sm font-bold text-foreground">
+                            <div className="text-sm font-bold text-foreground break-all px-2">
                                 {csvFile ? csvFile.name : "Selecciona o arrastra tu CSV Ciego"}
                             </div>
-                            <div className="text-xs text-muted-foreground mt-1">
+                            <div className="text-xs text-muted-foreground mt-1 px-2">
                                 Columnas requeridas: "text" o "titulo" y "descripcion"
                             </div>
                         </div>

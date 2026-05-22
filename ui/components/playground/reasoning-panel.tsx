@@ -157,9 +157,9 @@ export function ReasoningPanel({ activeTab, manualResult, batchResult, blindResu
     return (
         <div className="h-full bg-card border border-border/60 shadow-sm flex flex-col rounded-xl overflow-hidden">
             {/* CABECERA */}
-            <div className="h-[52px] px-4 flex items-center justify-between border-b border-border/60 bg-muted/20 text-foreground">
+            <div className="min-h-[52px] h-auto py-3 px-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border/60 bg-muted/20 text-foreground">
                 <div className="flex items-center gap-2 font-semibold tracking-tight text-muted-foreground">
-                    <BrainCircuit size={16} className="text-primary" />
+                    <BrainCircuit size={16} className="text-primary shrink-0" />
                     <span className="text-sm">
                         {activeTab === 'manual' ? 'Análisis del Motor (Pipeline NLP)' : activeTab === 'batch' ? 'Auditoría de IA (Lotes)' : 'Clasificador Masivo (Ciego)'}
                     </span>
@@ -177,7 +177,7 @@ export function ReasoningPanel({ activeTab, manualResult, batchResult, blindResu
                     <>
                         {isProcessing && !manualResult && (
                             <div className="space-y-3">
-                                <div className="grid grid-cols-2 gap-3"><SkeletonBlock className="h-[92px]" /><SkeletonBlock className="h-[92px]" /></div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><SkeletonBlock className="h-[92px]" /><SkeletonBlock className="h-[92px]" /></div>
                                 <SkeletonBlock className="h-[180px]" />
                                 <SkeletonBlock className="h-[150px]" />
                             </div>
@@ -209,7 +209,7 @@ export function ReasoningPanel({ activeTab, manualResult, batchResult, blindResu
 
                         {manualResult && !manualResult.isGarbage && (
                             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "circOut" }} className="space-y-4">
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="rounded-lg border border-border/60 bg-card p-3 flex flex-col gap-1 shadow-sm">
                                         <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                                             <CheckCircle2 size={14} className="text-green-500" /> Predicción Final
@@ -233,7 +233,7 @@ export function ReasoningPanel({ activeTab, manualResult, batchResult, blindResu
                                     <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-3">
                                         <Wand2 size={14} className="text-primary" /> Preprocesamiento (Pipeline NLP)
                                     </div>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <div className="rounded-md border border-border/60 bg-muted/30 p-3">
                                             <div className="flex items-center gap-2 text-[11px] font-bold text-muted-foreground mb-2">
                                                 <FileText size={12} /> Texto Crudo
@@ -290,18 +290,18 @@ export function ReasoningPanel({ activeTab, manualResult, batchResult, blindResu
                                     <div className="text-[11px] text-muted-foreground mb-3">
                                         Si la IA falló, ingresa el departamento correcto para que el modelo ajuste sus pesos (partial_fit).
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-col sm:flex-row gap-2">
                                         <Input
                                             value={feedbackDept}
                                             onChange={(e) => setFeedbackDept(e.target.value)}
                                             placeholder="Ej: Base de Datos"
-                                            className="h-9 rounded-md bg-background"
+                                            className="h-9 rounded-md bg-background w-full"
                                             disabled={isProcessing}
                                         />
                                         <Button
                                             onClick={handleSendFeedback}
                                             disabled={isProcessing || feedbackDept.trim().length < 2}
-                                            className="h-9 rounded-md bg-green-600 hover:bg-green-500 text-white font-semibold"
+                                            className="h-9 rounded-md bg-green-600 hover:bg-green-500 text-white font-semibold w-full sm:w-auto"
                                         >
                                             Entrenar
                                         </Button>
@@ -317,7 +317,7 @@ export function ReasoningPanel({ activeTab, manualResult, batchResult, blindResu
                     <>
                         {isProcessing && !batchResult && (
                             <div className="space-y-3">
-                                <div className="grid grid-cols-3 gap-3"><SkeletonBlock className="h-[80px]" /><SkeletonBlock className="h-[80px]" /><SkeletonBlock className="h-[80px]" /></div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3"><SkeletonBlock className="h-[80px]" /><SkeletonBlock className="h-[80px]" /><SkeletonBlock className="h-[80px]" /></div>
                                 <SkeletonBlock className="h-[140px]" />
                                 <SkeletonBlock className="h-[240px]" />
                             </div>
@@ -335,7 +335,7 @@ export function ReasoningPanel({ activeTab, manualResult, batchResult, blindResu
 
                         {batchResult && (
                             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "circOut" }} className="space-y-4">
-                                <div className="grid grid-cols-3 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <div className="rounded-lg border border-border/60 bg-card p-3 shadow-sm">
                                         <div className="text-[11px] font-semibold text-muted-foreground">F1-Score Ponderado</div>
                                         <div className="text-xl font-extrabold text-foreground">{batchResult.f1Score.toFixed(3)}</div>
@@ -407,7 +407,7 @@ export function ReasoningPanel({ activeTab, manualResult, batchResult, blindResu
                     <>
                         {isProcessing && !blindResult && (
                             <div className="space-y-3">
-                                <div className="grid grid-cols-3 gap-3"><SkeletonBlock className="h-[80px]" /><SkeletonBlock className="h-[80px]" /><SkeletonBlock className="h-[80px]" /></div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3"><SkeletonBlock className="h-[80px]" /><SkeletonBlock className="h-[80px]" /><SkeletonBlock className="h-[80px]" /></div>
                                 <SkeletonBlock className="h-[200px]" />
                                 <SkeletonBlock className="h-[300px]" />
                             </div>
@@ -427,7 +427,7 @@ export function ReasoningPanel({ activeTab, manualResult, batchResult, blindResu
                             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "circOut" }} className="space-y-4">
 
                                 {/* MÉTRICAS SUPERIORES */}
-                                <div className="grid grid-cols-3 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <div className="rounded-lg border border-border/60 bg-card p-3 shadow-sm">
                                         <div className="text-[11px] font-semibold text-muted-foreground">Tickets Procesados</div>
                                         <div className="text-xl font-extrabold text-foreground">{blindResult.totalTickets}</div>
@@ -448,7 +448,7 @@ export function ReasoningPanel({ activeTab, manualResult, batchResult, blindResu
                                         <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-4">
                                             <BarChart3 size={14} className="text-primary" /> Demanda por Departamento
                                         </div>
-                                        <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                                             {predictDistSorted.map(([dep, count]) => {
                                                 const width = predictMaxDist > 0 ? (count / predictMaxDist) * 100 : 0
                                                 return (
@@ -475,12 +475,12 @@ export function ReasoningPanel({ activeTab, manualResult, batchResult, blindResu
                                     </div>
                                     <div className="flex-1 overflow-auto">
                                         {blindResult.predictions.map((p) => (
-                                            <div key={p.id} className="p-3 border-b border-border/40 hover:bg-muted/30 transition-colors flex justify-between gap-4 items-center">
-                                                <div className="min-w-0 flex-1">
+                                            <div key={p.id} className="p-3 border-b border-border/40 hover:bg-muted/30 transition-colors flex flex-col sm:flex-row justify-between gap-2 sm:gap-4 items-start sm:items-center">
+                                                <div className="min-w-0 flex-1 w-full">
                                                     <div className="text-[10px] text-muted-foreground font-mono mb-0.5">#{p.id}</div>
-                                                    <div className="text-[12px] text-foreground truncate" title={p.text_original}>{p.text_original}</div>
+                                                    <div className="text-[12px] text-foreground line-clamp-2 sm:truncate" title={p.text_original}>{p.text_original}</div>
                                                 </div>
-                                                <div className="shrink-0 text-right">
+                                                <div className="shrink-0 text-left sm:text-right w-full sm:w-auto">
                                                     <div className="text-xs font-bold text-primary">{p.predicted_department}</div>
                                                     <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{p.confidence} de confianza</div>
                                                 </div>
