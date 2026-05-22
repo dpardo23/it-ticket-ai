@@ -7,7 +7,8 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# CORRECCIÓN: Solo dos dirname() para quedarnos dentro de la carpeta del proyecto (/app)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 VECTORIZER_PATH = os.path.join(MODELS_DIR, "tfidf.pkl")
 MODEL_PATH = os.path.join(MODELS_DIR, "sgd_model.pkl")
