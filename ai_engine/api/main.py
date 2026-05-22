@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from core.engine import ITTicketModel
 from core.nlp import preprocess_text
-from core.storage import insert_feedback, fetch_master_dataset, fetch_feedback_count
+from core.storage import insert_feedback, fetch_master_dataset, fetch_feedback_count, bulk_insert_dataset
 
 # ==========================================
 # 1. Configuración de la App
@@ -25,6 +25,24 @@ app.add_middleware(
 
 # Instancia global del Motor de IA (Singleton Funcional)
 engine = ITTicketModel()
+
+# ==========================================
+# 1.5 Arquitectura MLOps: Arranque Inmortal
+# ==========================================
+@app.on_event("startup")
+def restore_brain():
+    """
+    Detecta si Hugging Face borró los archivos .pkl temporales por inactividad.
+    Si hay amnesia, descarga el Data Lake (Supabase) y reconstruye la red neuronal.
+    """
+    if not engine.classifier or not engine.vectorizer:
+        print("[MLOps] Amnesia temporal detectada. Restaurando cerebro desde Supabase...")
+        df = fetch_master_dataset()
+        if not df.empty and len(df) >= 5:
+            engine.train_batch(df)
+            print(f"[MLOps] Cerebro restaurado exitosamente con {len(df)} tickets históricos.")
+        else:
+            print("[MLOps] Data Lake vacío o insuficiente. Esperando carga inicial de CSV.")
 
 # ==========================================
 # 2. Esquemas de Datos (Pydantic)
@@ -165,6 +183,10 @@ async def batch(file: UploadFile = File(...)):
     format_mapper = lambda item: {"text": item["nlp"][0], "department": item["raw_dept"]}
     clean_data = list(map(format_mapper, valid_records))
     
+    # MLOps: Inserción en el Data Lake (Supabase) evitando duplicados
+    bulk_insert_dataset(clean_data)
+    
+    # Entrenamiento matemático del modelo
     clean_df = pd.DataFrame(clean_data)
     train_stats = engine.train_batch(clean_df)
     
