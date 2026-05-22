@@ -1,7 +1,7 @@
 # IT Ticket AI — Pipeline NLP & Triaje Automatizado 🚀
 
 [![GitHub Release](https://img.shields.io/github/v/release/dpardo-bo/it-ticket-ai?color=EF4444&style=for-the-badge)](https://github.com/dpardo-bo/it-ticket-ai/releases)
-[![Version](https://img.shields.io/badge/version-v1.0.1-blue?style=for-the-badge)](https://github.com/dpardo-bo/it-ticket-ai/releases/tag/v1.0.1)
+[![Version](https://img.shields.io/badge/version-v1.0.7-blue?style=for-the-badge)](https://github.com/dpardo-bo/it-ticket-ai/releases/tag/v1.0.1)
 [![Rust](https://img.shields.io/badge/Rust-2021_Edition-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js_14+-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
