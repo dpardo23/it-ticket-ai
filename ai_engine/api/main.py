@@ -92,8 +92,8 @@ def predict(req: PredictRequest):
         known_tokens = list(filter(lambda t: t in vocab, tokens))
         known_ratio = len(known_tokens) / len(tokens)
         
-        # Umbral estricto: Si menos del 30% del texto tiene semántica conocida, se rechaza
-        if known_ratio < 0.3:
+        # Umbral estricto: Si menos del 15% del texto tiene semántica conocida, se rechaza
+        if known_ratio < 0.15:
              return {
                 "is_garbage": True, 
                 "message": f"Anomalía detectada. El texto carece de contexto IT válido (Coincidencia semántica: {known_ratio*100:.1f}%). Por favor, ingresa un ticket técnico."
