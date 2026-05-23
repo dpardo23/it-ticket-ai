@@ -263,7 +263,7 @@ async def batch_predict(file: UploadFile = File(...)):
             
         # Filtro 2: Detección Out-of-Domain (OOD)
         known_tokens = list(filter(lambda t: t in vocab, tokens))
-        if len(known_tokens) / len(tokens) < 0.3:
+        if len(known_tokens) / len(tokens) < 0.15:
              return {
                 "id": idx + 1,
                 "text_original": text_preview,
