@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'ai_engine/**' # Solo se ejecuta si modificas algo en el backend
+      - 'ai_engine/**'
 
 jobs:
   deploy-to-huggingface:

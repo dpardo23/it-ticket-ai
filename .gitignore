@@ -1,24 +1,72 @@
-# Node.js / Next.js
-node_modules/
-.next/
-out/
-build/
-.env*.local
-
-# Python / FastAPI / IA
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-ai_engine/venv/
+*.so
+*.egg
+*.egg-info/
+.eggs/
+.mypy_cache/
 .pytest_cache/
-ai_engine/.env
+.ruff_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# Machine learning artifacts
 models/
 *.pkl
+*.joblib
+*.h5
+*.onnx
+*.pt
+*.bin
+
+# Secrets & environment
+.env
+.env.local
+.env*.local
+ai_engine/.env
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.vercel/
+.turbo/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
 
 # Rust / Tauri
 src-tauri/target/
 src-tauri/gen/
 
-# OS / Misc
+# OS
 .DS_Store
-*.log
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/settings.json
+.idea/
+*.iml
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.agents
+.claude

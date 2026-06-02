@@ -8,20 +8,29 @@ import { InputPanel } from './playground/input-panel'
 import { ReasoningPanel } from './playground/reasoning-panel'
 import { TerminalPanel } from './playground/terminal-panel'
 
-import type { SingleInferenceResult, BatchInferenceResult, BlindBatchResult } from '@/types/ai'
+import type { SingleInferenceResult, BatchInferenceResult, BlindBatchResult, SolutionItem, StatsResult } from '@/types/ai'
 
-// Base URL dinámico para apuntar al backend.
-// Usa la variable de entorno NEXT_PUBLIC_API_BASE si está definida,
-// si no, usa el valor por defecto solicitado.
+/** Resuelto en build-time. En desarrollo apunta al backend local (puerto 7860). */
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'https://dpardo-it-ticket-ai-backend.hf.space'
 
+/**
+ * Orquestador principal del Playground de IA.
+ *
+ * Mantiene el estado de resultados (manual, batch, ciego, stats) y los logs
+ * del terminal. Realiza todas las llamadas HTTP al backend FastAPI y delega
+ * la presentación a InputPanel, ReasoningPanel y TerminalPanel.
+ *
+ * Relaciones: InputPanel (acciones de entrada), ReasoningPanel (visualización
+ * de resultados), TerminalPanel (logs en tiempo real), api.main (HTTP).
+ */
 export default function AIPlayground() {
-    const [activeTab, setActiveTab] = useState<'manual' | 'batch' | 'predict'>('manual')
+    const [activeTab, setActiveTab] = useState<'manual' | 'batch' | 'predict' | 'stats'>('manual')
     const [isProcessing, setIsProcessing] = useState(false)
 
     const [manualResult, setManualResult] = useState<SingleInferenceResult | null>(null)
     const [batchResult, setBatchResult] = useState<BatchInferenceResult | null>(null)
     const [blindResult, setBlindResult] = useState<BlindBatchResult | null>(null)
+    const [statsResult, setStatsResult] = useState<StatsResult | null>(null)
 
     const [logs, setLogs] = useState<string[]>([])
     const terminalRef = useRef<HTMLDivElement>(null!)
@@ -38,9 +47,10 @@ export default function AIPlayground() {
         setLogs((prev) => [...prev, `[ERROR] ${new Date().toLocaleTimeString()} - ${msg}`])
     }
 
-    // ==============================
-    // MANUAL INFERENCE
-    // ==============================
+    /**
+     * Envía el ticket manual al endpoint /api/predict y procesa la respuesta.
+     * Aplica la guardia de basura (is_garbage) antes de poblar manualResult.
+     */
     const handleManualSubmit = async (title: string, description: string) => {
         setIsProcessing(true)
         setManualResult(null)
@@ -104,9 +114,11 @@ export default function AIPlayground() {
         }
     }
 
-    // ==============================
-    // FEEDBACK
-    // ==============================
+    /**
+     * Envía la corrección del perfil al endpoint /api/feedback.
+     * El backend aplica partial_fit inmediato o lanza reentrenamiento completo
+     * si el departamento corregido es nuevo en el espacio de clases.
+     */
     const handleFeedback = async (originalText: string, correctDepartment: string) => {
         setIsProcessing(true)
         pushLog(`Registrando feedback humano -> ${correctDepartment}`)
@@ -147,9 +159,10 @@ export default function AIPlayground() {
         }
     }
 
-    // ==============================
-    // BATCH CSV (ENTRENAMIENTO)
-    // ==============================
+    /**
+     * Sube un CSV de entrenamiento a /api/batch, entrena el modelo y persiste
+     * la sesión en training_log vía insert_training_log en el backend.
+     */
     const handleBatchUpload = async (file: File) => {
         setIsProcessing(true)
         setBatchResult(null)
@@ -208,9 +221,98 @@ export default function AIPlayground() {
         }
     }
 
-    // ==============================
-    // BLIND PREDICT (INFERENCIA CIEGA)
-    // ==============================
+    /** Consulta /api/solutions para obtener soluciones conocidas del departamento predicho. */
+    const handleFetchSolutions = async (department: string): Promise<SolutionItem[]> => {
+        try {
+            const res = await fetch(`${API_BASE}/api/solutions?department=${encodeURIComponent(department)}`)
+            if (!res.ok) return []
+            const data = await res.json()
+            return data.solutions ?? []
+        } catch {
+            return []
+        }
+    }
+
+    /**
+     * Consulta /api/stats y carga el historial de sesiones de entrenamiento.
+     * Muestra un toast descriptivo en caso de 404 (backend desactualizado)
+     * o error de conexión.
+     */
+    const handleFetchStats = async () => {
+        setIsProcessing(true)
+        pushLog('Consultando historial de entrenamiento...')
+        try {
+            const res = await fetch(`${API_BASE}/api/stats`)
+
+            if (res.status === 404) {
+                pushError('El backend no tiene el endpoint /api/stats. Iniciá el backend local o redesplegá en HF Space.')
+                toast.error('Backend desactualizado', {
+                    description: 'El servidor no tiene /api/stats. Corré el backend local en puerto 7860.',
+                    duration: 6000,
+                })
+                return
+            }
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}))
+                pushError(data.detail || `Error HTTP ${res.status}`)
+                toast.error('Error al cargar estadísticas', { description: data.detail || `HTTP ${res.status}` })
+                return
+            }
+
+            const data = await res.json()
+            setStatsResult(data as StatsResult)
+            pushSuccess(`Historial cargado: ${data.totalSessions} sesiones de entrenamiento.`)
+        } catch (err: any) {
+            pushError(`Sin conexión al backend (${API_BASE}): ${err.message}`)
+            toast.error('Backend no disponible', {
+                description: `No se puede conectar a ${API_BASE}. Verificá que el servidor esté corriendo.`,
+                duration: 6000,
+            })
+        } finally {
+            setIsProcessing(false)
+        }
+    }
+
+    React.useEffect(() => {
+        if (activeTab === 'stats') handleFetchStats()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab])
+
+    /**
+     * Registra que una solución del modal fue útil para el perfil actual.
+     * Llama a /api/solutions/vote e incrementa su relevancia en la base de conocimiento.
+     * La operación es silenciosa — un fallo de red no interrumpe la experiencia.
+     */
+    const handleVoteSolution = async (department: string, solution: string) => {
+        try {
+            await fetch(`${API_BASE}/api/solutions/vote`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ department, solution }),
+            })
+        } catch { /* best-effort */ }
+    }
+
+    /**
+     * Persiste una solución aportada por el perfil en /api/solutions/feedback.
+     * Retorna true si el servidor aceptó el aporte, false en caso de error de red.
+     * La solución queda disponible inmediatamente para otros perfiles del mismo departamento.
+     */
+    const handleSubmitSolutionFeedback = async (department: string, solution: string): Promise<boolean> => {
+        try {
+            const res = await fetch(`${API_BASE}/api/solutions/feedback`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ department, solution }),
+            })
+            return res.ok
+        } catch {
+            return false
+        }
+    }
+
+    /** Sube un CSV sin etiquetas a /api/batch_predict y obtiene clasificación masiva ciega. */
     const handleBlindUpload = async (file: File) => {
         setIsProcessing(true)
         setBlindResult(null)
@@ -250,9 +352,9 @@ export default function AIPlayground() {
     return (
         <div className="w-full h-full flex flex-col overflow-y-auto lg:overflow-hidden p-2 lg:p-0">
             <motion.div
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: "circOut" }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="flex flex-col lg:grid lg:grid-cols-12 gap-4 h-auto lg:h-full lg:overflow-hidden"
             >
                 <div className="w-full lg:col-span-4 h-auto lg:h-full min-h-[500px] lg:min-h-0">
@@ -271,10 +373,10 @@ export default function AIPlayground() {
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={activeTab}
-                                initial={{ opacity: 0, scale: 0.98, filter: "blur(4px)" }}
-                                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                                exit={{ opacity: 0, scale: 0.98, filter: "blur(4px)" }}
-                                transition={{ duration: 0.3, ease: "circOut" }}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.1, ease: "linear" }}
                                 className="h-full"
                             >
                                 <ReasoningPanel
@@ -282,8 +384,13 @@ export default function AIPlayground() {
                                     manualResult={manualResult}
                                     batchResult={batchResult}
                                     blindResult={blindResult}
+                                    statsResult={statsResult}
                                     isProcessing={isProcessing}
                                     onFeedback={handleFeedback}
+                                    onFetchSolutions={handleFetchSolutions}
+                                    onFetchStats={handleFetchStats}
+                                    onVoteSolution={handleVoteSolution}
+                                    onSubmitSolutionFeedback={handleSubmitSolutionFeedback}
                                 />
                             </motion.div>
                         </AnimatePresence>

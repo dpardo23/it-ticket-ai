@@ -2,14 +2,25 @@
 
 import React, { useMemo, useRef, useState } from "react"
 import { motion } from "framer-motion"
-import { UploadCloud, FileText, Loader2, PlayCircle, ShieldAlert, Keyboard, Zap } from "lucide-react"
+import { UploadCloud, FileText, Loader2, PlayCircle, ShieldAlert, Keyboard, Zap, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 
+/**
+ * Panel de entrada del Playground (sección izquierda).
+ *
+ * Expone cuatro tabs: redacción de ticket manual, carga de CSV de entrenamiento
+ * (batch), carga de CSV para inferencia ciega y descripción del panel de stats.
+ * Valida formato CSV (extensión) y delega todo el procesamiento al padre
+ * AIPlayground mediante callbacks, sin lógica de negocio propia.
+ *
+ * Relaciones: AIPlayground (onManualSubmit, onBatchUpload, onBlindUpload,
+ * setActiveTab). El mismo fileInputRef sirve para batch e inferencia ciega.
+ */
 interface InputPanelProps {
-    activeTab: "manual" | "batch" | "predict"
-    setActiveTab: (tab: "manual" | "batch" | "predict") => void
+    activeTab: "manual" | "batch" | "predict" | "stats"
+    setActiveTab: (tab: "manual" | "batch" | "predict" | "stats") => void
     isProcessing: boolean
     onManualSubmit: (title: string, description: string) => void
     onBatchUpload: (file: File) => void
@@ -22,7 +33,7 @@ export function InputPanel({
     isProcessing,
     onManualSubmit,
     onBatchUpload,
-    onBlindUpload
+    onBlindUpload,
 }: InputPanelProps) {
     const [title, setTitle] = useState("")
     const [description, setDescription] = useState("")
@@ -88,33 +99,40 @@ export function InputPanel({
                     <button
                         onClick={() => setActiveTab("manual")}
                         disabled={isProcessing}
-                        className={`flex-1 sm:flex-none px-3 py-1 text-xs font-medium rounded-md transition-all duration-300 ${activeTab === "manual" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`flex-1 sm:flex-none px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 ${activeTab === "manual" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     >
                         Manual
                     </button>
                     <button
                         onClick={() => setActiveTab("batch")}
                         disabled={isProcessing}
-                        className={`flex-1 sm:flex-none px-3 py-1 text-xs font-medium rounded-md transition-all duration-300 ${activeTab === "batch" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`flex-1 sm:flex-none px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 ${activeTab === "batch" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     >
                         Lotes
                     </button>
                     <button
                         onClick={() => setActiveTab("predict")}
                         disabled={isProcessing}
-                        className={`flex-1 sm:flex-none px-3 py-1 text-xs font-medium rounded-md transition-all duration-300 ${activeTab === "predict" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`flex-1 sm:flex-none px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 ${activeTab === "predict" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     >
                         Inferencia
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("stats")}
+                        disabled={isProcessing}
+                        className={`flex-1 sm:flex-none px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 ${activeTab === "stats" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                        IA Stats
                     </button>
                 </div>
             </div>
 
             {/* CUERPO */}
-            <div className={`flex-1 overflow-y-auto p-4 space-y-4 transition-opacity duration-500 ${isProcessing ? "pointer-events-none opacity-60" : ""}`}>
+            <div className={`flex-1 overflow-y-auto p-4 space-y-4 transition-opacity duration-150 ${isProcessing ? "pointer-events-none opacity-60" : ""}`}>
 
                 {/* TICKET MANUAL */}
                 {activeTab === "manual" && (
-                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, ease: "circOut" }} className="space-y-4">
+                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.12, ease: "easeOut" }} className="space-y-4">
                         <div className="rounded-lg border border-border/60 bg-card p-3 space-y-3 shadow-sm">
                             <div className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
                                 <FileText size={14} className="text-primary" />
@@ -153,7 +171,7 @@ export function InputPanel({
 
                                 <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
                                     <div
-                                        className="h-full bg-primary transition-all duration-300 ease-out"
+                                        className="h-full bg-primary transition-all duration-150 ease-out"
                                         style={{ width: `${(descCount / maxDescLength) * 100}%` }}
                                     />
                                 </div>
@@ -163,7 +181,7 @@ export function InputPanel({
                         <Button
                             onClick={handleManualClick}
                             disabled={isProcessing}
-                            className="w-full h-11 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md transition-all duration-300"
+                            className="w-full h-11 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md transition-all duration-150"
                         >
                             {isProcessing ? (
                                 <><Loader2 size={16} className="animate-spin mr-2" /> Analizando NLP...</>
@@ -183,15 +201,16 @@ export function InputPanel({
 
                 {/* SUBIDA POR LOTES (Entrenamiento) */}
                 {activeTab === "batch" && (
-                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, ease: "circOut" }} className="space-y-4">
+                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.12, ease: "easeOut" }} className="space-y-4">
                         <div className="rounded-lg border border-border/60 bg-card p-3 space-y-2 shadow-sm">
                             <div className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
                                 <UploadCloud size={14} className="text-primary" />
                                 Entrenamiento K-Fold (CSV)
                             </div>
                             <div className="text-[11px] text-muted-foreground leading-relaxed">
-                                Sube un archivo CSV con las columnas:
-                                <b className="text-foreground"> text, department</b>.
+                                Columnas requeridas: <b className="text-foreground">text, department</b>.
+                                <br />
+                                Columna opcional: <b className="text-foreground">solution</b> (o <b className="text-foreground">solucion</b>) — persiste soluciones conocidas por área en el Data Lake.
                             </div>
                         </div>
 
@@ -232,7 +251,7 @@ export function InputPanel({
                                 onBatchUpload(csvFile)
                             }}
                             disabled={isProcessing || !csvFile}
-                            className="w-full h-11 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md transition-all duration-300"
+                            className="w-full h-11 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md transition-all duration-150"
                         >
                             {isProcessing ? (
                                 <><Loader2 size={16} className="animate-spin mr-2" /> Entrenando IA...</>
@@ -243,9 +262,29 @@ export function InputPanel({
                     </motion.div>
                 )}
 
+                {/* IA STATS */}
+                {activeTab === "stats" && (
+                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.12, ease: "easeOut" }} className="space-y-4">
+                        <div className="rounded-lg border border-border/60 bg-card p-3 space-y-2 shadow-sm">
+                            <div className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                                <TrendingUp size={14} className="text-primary" />
+                                Curva de Aprendizaje
+                            </div>
+                            <div className="text-[11px] text-muted-foreground leading-relaxed">
+                                Visualiza cómo evoluciona el <b className="text-foreground">F1-Score</b>, la <b className="text-foreground">Exactitud</b> y la <b className="text-foreground">Confianza Media</b> de la IA con cada entrenamiento. Más datos = mayor precisión.
+                            </div>
+                        </div>
+                        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-[11px] text-muted-foreground leading-relaxed space-y-1">
+                            <p className="font-semibold text-foreground">¿Cómo funciona?</p>
+                            <p>Cada vez que subís un CSV o la IA se reentrena por feedback, se registra un punto en la curva.</p>
+                            <p>La <span className="text-primary font-semibold">Confianza Media</span> mide qué tan segura está la IA al clasificar — a mayor volumen de datos variados, más alta.</p>
+                        </div>
+                    </motion.div>
+                )}
+
                 {/* INFERENCIA CIEGA */}
                 {activeTab === "predict" && (
-                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, ease: "circOut" }} className="space-y-4">
+                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.12, ease: "easeOut" }} className="space-y-4">
                         <div className="rounded-lg border border-border/60 bg-card p-3 space-y-2 shadow-sm">
                             <div className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
                                 <Zap size={14} className="text-primary" />
@@ -293,7 +332,7 @@ export function InputPanel({
                                 onBlindUpload(csvFile)
                             }}
                             disabled={isProcessing || !csvFile}
-                            className="w-full h-11 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md transition-all duration-300"
+                            className="w-full h-11 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md transition-all duration-150"
                         >
                             {isProcessing ? (
                                 <><Loader2 size={16} className="animate-spin mr-2" /> Clasificando...</>
