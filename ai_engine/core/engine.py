@@ -14,8 +14,13 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import f1_score, accuracy_score, confusion_matrix
-from sklearn.model_selection import StratifiedKFold, cross_val_predict
+from sklearn.model_selection import StratifiedKFold, cross_val_predict, train_test_split
 from sklearn.utils.class_weight import compute_class_weight
+
+# Umbral a partir del cual se usa split 80/20 en lugar de 5-fold CV.
+# Para datasets grandes, la CV requiere entrenar el modelo 5 veces extra;
+# un split estratificado es estadísticamente equivalente y evita ese costo.
+_LARGE_DATASET_THRESHOLD = 20_000
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(BASE_DIR, "models")
@@ -82,13 +87,30 @@ class ITTicketModel:
 
         self.classifier = SGDClassifier(loss="log_loss", random_state=42, class_weight=class_weight_dict)
 
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-        y_pred_cv = cross_val_predict(self.classifier, X, labels, cv=cv, n_jobs=-1)
+        if len(texts) >= _LARGE_DATASET_THRESHOLD:
+            # Con datasets grandes (≥20k), un split estratificado 80/20 produce
+            # métricas igualmente representativas sin necesidad de entrenar el
+            # modelo 5 veces extra como haría la validación cruzada.
+            X_tr, X_te, y_tr, y_te = train_test_split(
+                X, labels, test_size=0.2, random_state=42, stratify=labels
+            )
+            _eval_clf = SGDClassifier(loss="log_loss", random_state=42, class_weight=class_weight_dict)
+            _eval_clf.fit(X_tr, y_tr)
+            y_pred_eval = _eval_clf.predict(X_te)
+            f1 = f1_score(y_te, y_pred_eval, average="weighted")
+            acc = accuracy_score(y_te, y_pred_eval)
+            cm = confusion_matrix(y_te, y_pred_eval, labels=self.departments)
+        else:
+            # Para datasets pequeños (<20k), 5-fold CV ofrece una estimación
+            # de generalización más robusta al evaluar sobre el 100% de los datos.
+            cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+            y_pred_cv = cross_val_predict(self.classifier, X, labels, cv=cv, n_jobs=-1)
+            f1 = f1_score(labels, y_pred_cv, average="weighted")
+            acc = accuracy_score(labels, y_pred_cv)
+            cm = confusion_matrix(labels, y_pred_cv, labels=self.departments)
 
-        f1 = f1_score(labels, y_pred_cv, average="weighted")
-        acc = accuracy_score(labels, y_pred_cv)
-        cm = confusion_matrix(labels, y_pred_cv, labels=self.departments)
-
+        # Entrenamiento final sobre la totalidad del dataset, independientemente
+        # del método de evaluación usado arriba.
         self.classifier.fit(X, labels)
         self._save_artifacts()
 

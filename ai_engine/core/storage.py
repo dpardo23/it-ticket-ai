@@ -57,42 +57,43 @@ def insert_feedback(original_text: str, correct_department: str) -> None:
 
 def bulk_insert_dataset(records: list[dict]) -> None:
     """
-    Inserta registros en dataset_master evitando duplicados por texto.
+    Inserta registros en dataset_master usando upsert masivo sin pre-verificación.
 
-    Deduplica primero dentro del propio lote entrante en O(n) con un set.
-    Luego consulta Supabase en chunks de 200 usando el índice
-    idx_dataset_master_text para identificar textos ya existentes sin
-    saturar el filtro IN. Finalmente inserta solo los registros nuevos
-    en bloques de 500 filas para no sobrecargar la red.
+    La versión anterior hacía len(records)/200 queries HTTP solo para identificar
+    duplicados (250 queries para 50k registros, 1000 para 200k), lo que dominaba
+    el tiempo total de procesamiento.
+
+    Esta versión elimina esa fase por completo: deduplica en memoria dentro del
+    lote entrante y delega la deduplicación contra filas ya existentes al índice
+    UNIQUE de la base de datos mediante upsert con ignore_duplicates=True, que
+    se traduce en INSERT … ON CONFLICT DO NOTHING a nivel PostgreSQL.
+
+    Los registros se envían en bloques de 2000 filas (4x el tamaño anterior)
+    para reducir el número de round-trips HTTP manteniendo payloads manejables.
     Soporta campo opcional solution para tickets con resolución conocida.
     Llamado por: api.main.batch.
     """
     if not records:
         return
 
+    # Deduplicación dentro del lote en O(n): evita conflictos internos que
+    # upsert no puede resolver cuando dos filas del mismo payload colisionan.
     seen: set = set()
     unique_incoming = list(filter(
         lambda r: not (r["text"] in seen or seen.add(r["text"])),  # type: ignore[func-returns-value]
         records
     ))
 
-    incoming_texts = list(map(lambda r: r["text"], unique_incoming))
-    existing_texts: set = set()
-    check_chunk = 200
-    for i in range(0, len(incoming_texts), check_chunk):
-        chunk = incoming_texts[i:i + check_chunk]
-        resp = supabase.table("dataset_master").select("text").in_("text", chunk).execute()
-        if resp.data:
-            existing_texts.update(map(lambda r: r["text"], resp.data))
-
-    new_records = list(filter(lambda r: r["text"] not in existing_texts, unique_incoming))
-
-    if not new_records:
-        return
-
-    insert_chunk = 500
-    for i in range(0, len(new_records), insert_chunk):
-        supabase.table("dataset_master").insert(new_records[i:i + insert_chunk]).execute()
+    # Un upsert con ignore_duplicates aplica ON CONFLICT DO NOTHING usando el
+    # índice UNIQUE de la columna text, por lo que los registros ya existentes
+    # en la base de datos simplemente se omiten sin generar errores ni queries
+    # de verificación previas.
+    insert_chunk = 2000
+    for i in range(0, len(unique_incoming), insert_chunk):
+        supabase.table("dataset_master").upsert(
+            unique_incoming[i:i + insert_chunk],
+            ignore_duplicates=True
+        ).execute()
 
 
 def insert_training_log(
